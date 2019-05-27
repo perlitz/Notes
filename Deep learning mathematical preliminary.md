@@ -143,6 +143,30 @@ To summarize:
 
 ## Normalizing flow
 
+[Notes](<https://deepgenerativemodels.github.io/notes/>)
+
+**In normalizing flow we parametrize the distribution by the transformations from a unit gaussian to it. When we learn, we actually learn the transformations.**
+
+A generative model is defined in which first, a point is sampled from a base distribution (Almost exclusively a diagonal gaussian):
+$$
+z_0 \sim p(z_0)
+$$
+Then, this sampled data-point is transformed according to:
+$$
+x=F_\theta(z)
+$$
+Next, if $F_0$ is invertible (not true to all NF models), we can get the likelihood by 
+$$
+\log p(x) = \log p(F^{-1}_\theta(x))-\log|\frac{\part F_\theta}{\part x}|
+$$
+ and get the values of parameters $\theta$ using the maximum likelihood estimation scheme.
+
+
+
+
+
+
+
 Why does one needs NF? Since a good estimation of $p(x)$ makes it possible to efficiently complete many downstream tasks: sample unobserved but realistic new data points (data generation), predict the rareness of future events (density estimation), infer latent variables, fill in incomplete data samples, etc.
 
 Machine learning is all about probability, what we do when we train a model is tune the parameters in order to maximize the probability of the training dataset under the model. In order to do so, we must assume some probability distribution as the output of our model. Usually, we choose Categorical distribution for classification and Gaussian for regression (in the gaussian distribution,  taking the (log) maximum likelihood of a gaussian distribution is what gives us the MSE loss). Choosing a gaussian distribution as our distribution model is problematic since a gaussian is a very simple function.
