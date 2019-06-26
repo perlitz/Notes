@@ -32,8 +32,12 @@
 
 ## Information theory
 
-[Visual Information Theory - Olah](http://colah.github.io/posts/2015-09-Visual-Information)
+`[Visual Information Theory - Olah](http://colah.github.io/posts/2015-09-Visual-Information)
 
 ## Representation theory
 
 [Neural Networks, Manifolds, and Topology  -Olah](<https://colah.github.io/posts/2014-03-NN-Manifolds-Topology/>)
+
+# Talks
+
+[Towards a theoretical understanding of deep neural networks](https://youtu.be/rcR6P5O8CpU?t=4197)

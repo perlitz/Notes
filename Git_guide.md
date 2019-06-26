@@ -153,5 +153,7 @@ An example of a few lines one will want to add to a .gitignore file:
 *.mpg
 *.mpeg
 *.mat
+*.idea
+*.pth
 ```
 

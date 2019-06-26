@@ -141,25 +141,137 @@ To summarize:
 1. Backprop is does not directly fall out of the the rules for differentiation that you learned in calculus (e.g., the chain rule).  This is since it operates on a more general family of functions: programs which have intermediate variables
 2. Backprop is a particular instantiation of the method of Lagrange multipliers.
 
-## Normalizing flow
+## Variational Inference
+
+#### Variational Inference: Foundation and Modern Methods ([Talk](https://youtu.be/ogdv_6dbvVQ?t=1099), [Slides](<https://media.nips.cc/Conferences/2016/Slides/6199-Slides.pdf>))
+
+> Inference answers the question: What does this model say about this data.
+
+ The Probabilistic pipe line goes as such:
+
+1. Use knowledge to make assumptions about model (gaussian, iid etc).
+
+2. Use data to train model and discover patterns in the data.
+
+3. Use patterns (or trained model) to predict and explore. (Do Inference!)
+
+4. Criticize model and revise assumptions (1).
+
+   ![Variational inference sketch.pdf](Y:\Code\Markdown\Personal_notes\Deep learning mathematical preliminary\Variational inference sketch.pdf.png)
+
+   
+
+ A probabilistic model is a joint distribution between hidden variables $z$ and observed variables $x$ "what is the probability of having both these $x$ and $z$?"
+$$
+p(x,z)
+$$
+Inference about the unknown $z$ is through the *posterior* $p(z|x)$  "given these $x$, what is the probability of $z$?":
+$$
+p(z|x)=p(x,z)/p(x)
+$$
+ The biggest problem is that the denominator is not tractable, one cannot compute it, we must thus approximate it, this is **approximate posterior inference**.
+
+> Variational Inference turns Inference in to an Optimization Problem.
+
+We posit a variational  family of distributions over the latent variables:
+$$
+q(z; \nu)
+$$
+and **fit** the variational parameter $\nu$ for the variational distribution to be KL close to the exact posterior.  As we see in the figure, start with some family of distributions and approximate them to be as close as space permits to the real posterior.
+
+![Variational optimization](Y:\Code\Markdown\Personal_notes\Deep learning mathematical preliminary\Variational optimization.png)
+
+ An example to variational inference is the Mixture of gaussians which start with a variational family of a few gaussians and approximate their variational parameter $\nu$, which in this case is their mean and STD to fit the data best.
+
+###### Part 1  -Mean Field and Stochastic Variational Inference
+
+ An example we will see along the talk is of *Topic Modeling*, topic models use posterior inference to discover the hidden thematic structure in a large collection of documents. 
+
+The specific model we use is LDA which is based upon the premise that a document has several topics. Each of these topics is some distribution over words , each document is a mixture of topics (distributions), each word is drawn from on of those topics.
+
+![LDA](Y:\Code\Markdown\Personal_notes\Deep learning mathematical preliminary\LDA.png)
+
+When we have the model, we can use it as a posterior distribution, observe a document with all the topics hidden and we want to calculate:
+$$
+p(\text{topics, proportions, assignments | documents})
+$$
+Our model is a graphical one, what this means is that it encodes assumptions about the data that helps us to factorize the joint distribution. An example of a graphical model can be seen below: 
+
+![Graphical model](Y:\Markdown\Personal_notes\Deep learning mathematical preliminary\Graphical model.png)
+
+Each node is a random variable, black points are parameters, shaded nodes are observed. The inference process works as such, each topic gets it's parameters from the learned $\eta$, there are $K$ such topics and $\beta$ represents a sample from their distribution ($\beta$ tells us which topic are we working on right now) . 
+
+Each document gets $\theta _d$ from $\alpha$ which is the distribution over topics per-documents, from this distribution, $z$ is sampled and sets the topic assignment, the color, of each word. Combining the per-document dist and the general topic dist eventually allow for the sampling of $w$.
+
+All these parameters and $w$, the word have some joint probability, this graph just makes some order and assumptions about it. The posterior takes the form of:
+$$
+p(\beta,\theta,z|w)=\frac{p(\beta,\theta,z,w)}{\int_\beta \int_\theta \sum_z p(\beta,\theta,z,w)}
+$$
+The problem here is that we cannot compute the denominator, the marginal $p(w)$. We will use approximate inference.
+
+How do we get this uncomputable posterior?  
+
+> The goal of inference is to get the model parameters (the hidden variables) given the data $p(\alpha,\beta,\gamma,\delta|x)$.
+
+Since we can't compute the posterior, minimizing the KL div seems to be hard, to bypass this problem, we use the ELBO, evidence lower bound which is a proxy to KL divergence.
+
+> Maximizing the ELBO is  the same as minimizing the KL divergence.
+
+ELBO is of the form:
+$$
+\mathcal{L}=\mathbb{E}_q[\log p(z,x)] - \mathbb{E}_q[\log q_\theta(z,x)]
+$$
+First term pushes $q$ to put all it's mass on the MAP estimate of $p$, the second term is actually the entropy of $q$, it pushes it towards a wider distribution.
+
+Optimization of the ELBO can be done using the mean field approximation that sets all latent variables as independent, this allows for iterative coordinate decent optimization.
+
+> In the mean field family, each latent variable has it's own parameter.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+​	
+
+### Normalizing flow
 
 [Notes](<https://deepgenerativemodels.github.io/notes/>)
 
 **In normalizing flow we parametrize the distribution by the transformations from a unit gaussian to it. When we learn, we actually learn the transformations.**
 
-A generative model is defined in which first, a point is sampled from a base distribution (Almost exclusively a diagonal gaussian):
+##### Training NF using MLE
+
+Sample $x$ from the data $x\sim p(x)$, transform it to $z$ using $z=f(x)$, then minimize the likelihood of $p_\theta(x)$ given the transformation:
 $$
-z_0 \sim p(z_0)
+\text{argmax}_\theta \log p_\theta(x) = \text{argmax}_\theta\left[\log p(f_\theta(x))-\log\left|\frac{\part f_\theta(x)}{\part x}\right|\right]
 $$
-Then, this sampled data-point is transformed according to:
+After the optimization over many data points $x$, we have learned $\theta$  and can perform inference (density estimation for data point $x$) using our knowledge of the base distribution (usually a gaussian).
+
+If $f()$ is invertible, we can use it to generate new data by sampling $z$ from the base dist $z_0 \sim p(z_0)$ and transform it according to 
 $$
-x=F_\theta(z)
+x=f^{-1}_\theta(z)
 $$
-Next, if $F_0$ is invertible (not true to all NF models), we can get the likelihood by 
-$$
-\log p(x) = \log p(F^{-1}_\theta(x))-\log|\frac{\part F_\theta}{\part x}|
-$$
- and get the values of parameters $\theta$ using the maximum likelihood estimation scheme.
+
+
+
+
+
 
 
 
@@ -177,43 +289,9 @@ The main idea behind Normalizing Flows (NF) is that of change of variables, this
 
 ![1558354914965](C:\Users\yotampe\AppData\Roaming\Typora\typora-user-images\1558354914965.png)
 
-#### Technically speaking
+##### Technically speaking
 
 NF is based upon the Change of variable theorem. The change of variables theorem reduces the whole problem of figuring out the distortion of the content to understanding the infinitesimal distortion, i.e., the distortion of the derivative which is given by the determinant of the Jacobian matrix (a generalization for high dimensionality of the derivative). One should note that this theorem is infinitesimal and does not apply to large transformations.
-
-#### ODE Talk by Duvanov
-
-Intuition - it is easier to learn the change to improve an almost correct answer (expanding near unity ) then it is to compleatly transform the answer at every level. Also, it makes it easier for the gradients to flow this way.
-
-The first step in turning a resnet into a ODENet is to reparametrize the layers s.t they will also know at which time they are at, instead of inputting $(z,\theta[t])$ we input $([z,t],\theta)$, this is simply reparametrization but it actually means that the state has time tied to it and the layer gets time as an input. After this substitution, the process looks like an Euler solver and can be replaced by and ODE solver. What is nice with the modern methods for solving ODEs is that they are dynamic in the sense that given an input, they can change the number of evaluations (layers). 
-
-The authors are not the first to think about using an continuous time model instead of a discreet one, their contibution comes from the way to train this model and baypass the need to backpropagate through the layers. This is hard from two reasons: 1.  High memory cost in order to keep all the intermediate values 2. the solver add extra numerical error for every step but eventually converges to the right answer. A better way is to approximate the derivative and should not derive the approximations.
-
-The way that is proposed to learn using this method is using the adjoint sensitivity method which is a continuous take on the regular back propagation, in this method there are extra two differential equations to solve, one for the adjoint sensitivity ($\delta$ in the regular backprop) and another one, using this adjoint for $\frac{\part L}{\part \theta}$. 
-
-Another benifite here is constant memory cost, this is since, once the forward pass is done, all the backwards pass needs to know is the last hidden state, the ODE solver can get the states as the reverse pass goes along by solving the original ODE backwards in time.
-
-ODENets does not have a notion of depth, the thing that is closes to depth is evaluations, another nice thing is that in the process of learning, the network makes half the backwards pass than forward passes and saves time by doing it.
-
-#### Continuous time dynamics
-
-Unlike ResNets, ODENets have a well defined state at all times, even between observations.  This enables them to extrapolate data better then an RNN that doesn't work well with irregular time interval. One can even take advantage of the data that comes with the irregularity and add a Poisson process, the usual problem with adding a Poisson likelihood integral is that it has a time integral but now this fits really nicely.
-
-**How does the RNN takes care of the irregular intervals**
-
-##### Density modeling 
-
- Usually, in order to preform a change of variables, one has to take the determinent of the Jacobian of the operation, this is a rather expansive feat. The authors found out that in the case that the change in $z$ is instatanouos, the change of variables becomes much easier to compute
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -227,7 +305,7 @@ $$
 $$
 where $q_0(z_0)$ is the initial distribution and $q_K(z_K)$ is the final transformed distribution.
 
-## Variational autoencoder
+### Variational autoencoder
 
 Goal, we wish to describe out data using some set of latent variables $z$ and maximize the model $p(X)$ w.r.t $p(x|z)$ and $p(z)$. This poses a big problem since marginalizing over $z$ (doing $p(x)=\sum_z p(x|z)p(z)$ is intractable since there might be a huge number of $z$'s in a multiple dimensional space which summing over is impossible. Solution, defining a separate variational distribution for each $z$, say a gaussian to serve as an approximate posterior $q_i$ , this approximate postirior is used as a lower bound on the real likelihood, it is called the Evidence Lower Bound (ELBO), now ELBO is easier to maximize in small steps where on each step we use a few images to get $z$ and then approximate $q \approx z$ 
 
@@ -237,9 +315,9 @@ Goal, we wish to describe out data using some set of latent variables $z$ and ma
 
 
 
-#### From a Technical point of view ([A nice blog I followed](http://akosiorek.github.io/ml/2018/03/14/what_is_wrong_with_vaes.html))
+##### From a Technical point of view ([A nice blog I followed](http://akosiorek.github.io/ml/2018/03/14/what_is_wrong_with_vaes.html))
 
-##### Latent Variable Models
+###### Latent Variable Models
 
 Say we want to model the world in terms of a probability distribution $p(\mathbf{x})$ with $\mathbf{x}\in R^D$. The thing is - the world is complicated and we do not know what form of $p(\mathbf{x})$ we need take. To account for it, we introduce another variables $\mathbf{z}\in R^d$ which describes, or explains the content of $\mathbf{x}$. For example, in case $\mathbf{x}$ is an image, $\mathbf{x}$ can contain information about the number, type and appearance of objects in the image. In this case, the total probability will be something like, what is the probability of having two cats in the image times the probability of having this image given that there are two cats etc, this makes the distribution more complex, it will take the form:
 $$
@@ -264,7 +342,7 @@ From [importance sampling literature](http://statweb.stanford.edu/~owen/mc/Ch-va
 
 Fortunately, it turns out that by approximating the posterior with a learned proposal, we can approximate the marginal probability $p_\theta (x)$ , this looks like an autoencoding setup.
 
-##### Rise of a Variational Autoencoder
+###### Rise of a Variational Autoencoder
 
 To learn the model, we will need: $p_\theta (x,z)$ - the generative model, which consists of $p_\theta (x|z)$ - a probabilistic decoder and $p(z)$ - a prior over the latent variables. Apart from the above, we will also need $q_\phi	(z|x)$ a probabilistic encoder.  Upon having all these things' we can use the Kulback-Leibler divergence in order to measure the distance between the distributions. 
 $$
@@ -315,7 +393,7 @@ By maximizing ELBO, we:
 
 The nice thing here is that once the distribution of latent variables is indeed similar to the proor distribution we choose for $z$ ,once we want to generate an example we just generate it using $p(z)$
 
-#### From a intuitive point of view
+##### From a intuitive point of view
 
 The difference between a Variational autoencoder and a regular autoencoder is that is the former we put a constraint on the encoding network which forces it to generate latent vectors that roughly follow a unit gaussian distribution, a continues latent space. This makes creating images rather easy, we can just sample a vector from a unit gaussian and know that we will not get trash out of the decoder. Note that STD=1 is large and the network will usually want to have it -> 0.  This comes to solve the fundamental problem with autoencoders, for generation, is that the latent space they convert their inputs to and where their encoded vectors lie, may not be continuous, or allow easy interpolation.
 
@@ -413,6 +491,32 @@ Instead of stride preforming down sampling as in a regular convolution, in trans
 
 ## Neural ordinary differential equations
 
+#### ODE Talk by Duvanov
+
+Intuition - it is easier to learn the change to improve an almost correct answer (expanding near unity ) then it is to compleatly transform the answer at every level. Also, it makes it easier for the gradients to flow this way.
+
+The first step in turning a resnet into a ODENet is to reparametrize the layers s.t they will also know at which time they are at, instead of inputting $(z,\theta[t])$ we input $([z,t],\theta)$, this is simply reparametrization but it actually means that the state has time tied to it and the layer gets time as an input. After this substitution, the process looks like an Euler solver and can be replaced by and ODE solver. What is nice with the modern methods for solving ODEs is that they are dynamic in the sense that given an input, they can change the number of evaluations (layers). 
+
+The authors are not the first to think about using an continuous time model instead of a discreet one, their contibution comes from the way to train this model and baypass the need to backpropagate through the layers. This is hard from two reasons: 1.  High memory cost in order to keep all the intermediate values 2. the solver add extra numerical error for every step but eventually converges to the right answer. A better way is to approximate the derivative and should not derive the approximations.
+
+The way that is proposed to learn using this method is using the adjoint sensitivity method which is a continuous take on the regular back propagation, in this method there are extra two differential equations to solve, one for the adjoint sensitivity ($\delta$ in the regular backprop) and another one, using this adjoint for $\frac{\part L}{\part \theta}$. 
+
+Another benifite here is constant memory cost, this is since, once the forward pass is done, all the backwards pass needs to know is the last hidden state, the ODE solver can get the states as the reverse pass goes along by solving the original ODE backwards in time.
+
+ODENets does not have a notion of depth, the thing that is closes to depth is evaluations, another nice thing is that in the process of learning, the network makes half the backwards pass than forward passes and saves time by doing it.
+
+#### Continuous time dynamics
+
+Unlike ResNets, ODENets have a well defined state at all times, even between observations.  This enables them to extrapolate data better then an RNN that doesn't work well with irregular time interval. One can even take advantage of the data that comes with the irregularity and add a Poisson process, the usual problem with adding a Poisson likelihood integral is that it has a time integral but now this fits really nicely.
+
+**How does the RNN takes care of the irregular intervals**
+
+##### Density modeling 
+
+ Usually, in order to preform a change of variables, one has to take the determinent of the Jacobian of the operation, this is a rather expansive feat. The authors found out that in the case that the change in $z$ is instatanouos, the change of variables becomes much easier to compute
+
+
+
 ### Implicit Vs Explicit ODE solvers
 
 Given a differential equation $\frac{\part u}{\part t}=f(u,t)$, constraining $f(u,t)=-c u(t)$ where   $c$ is positive, gives the equation:
@@ -440,4 +544,34 @@ Thus, it seems that an implicit method is better at solving this equation, it is
 **The difference between the two methods is whether we use the past value ($u_n$) or the next value ($u_{n+1}$) in order to evaluate the next ($u_{n+1}$)**
 
 
+
+# Toward Theoretical Understanding of Deep Learning (ICML 2018 tutorial)
+
+##### Optimization of DNNs
+
+There are a  lot of direction in $d$ dimensions:
+
+in $R^d$ , $\exist \ \exp(\frac{d}{\epsilon})$ directions whose pairwise angle is at most $\epsilon$ degrees. This makes the general notion of arriving at an answer naively intractable.
+
+There is no knowledge of the loss landscape, the optimization algorithm works in a black box.
+
+To ensure so  decent in GD we put a bound on the Hessian with doesn't allow the landscape to fluctuate a lot. The talk has a small proof that shows that if the hessian is bound by some $\beta$ there is a set difference on the loss between two steps which means that so long as the gradient is large you will make some progress. Note that this doesn't mean arriving at a global minimum, however, this does not pose a problem since it has been shown that upon addition of some noise (as we naturally have), the optimization passes all saddle points and reaches a bottom of some valley. 
+
+2nd order optimization methods also exist, however, they do not give better answers to SGD is still used.
+
+It has been shown that in single layer nets SGD is promised to arrive at a global minimum.
+
+##### Role of depth
+
+The ideal result in this field is to find some problem which cannot be solved with depth $d$ and can be solved with a net of depth $d+1$.
+
+Pros of depth is more expressivity, Cons are more difficult optimization. A recent paper showed that increasing network depth can accelerate optimization.
+
+##### Theory Generative models and GANs
+
+Unsupervised learning is sometimes called Representation learning and lies on the notion of Manifold assumption that the data has some underlying structure. The goal is to use a large **unlabeled** dataset and learn this manifold, which is the same as learning a code mapping from the data to some latent variables in a latent space.
+
+The hope is that the latent variables, or code is a good substitution for the data. Say if the data has only black dogs and white cats, it is enough to have a color variable instead of the full image, the code is much thinner but still holds all the data.
+
+Deep generative models try to solve this code, their first assumption is that the distribution of codes (latent variables) is a random vector (sampled from some distribution) with mapping done by a DNN.
 

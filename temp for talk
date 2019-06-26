@@ -1,0 +1,69 @@
+$$
+\mathbf{z}_t=\mathbf{z}_{t-1}+f(\mathbf{z}_{t-1},\theta,t)
+$$
+
+$$
+\mathbf{z}(t+h)=\mathbf{z}(t)+hf(\mathbf{z},t)
+$$
+
+$$
+f([\mathbf{z},t],\theta)
+$$
+
+$$
+f(\mathbf{z},\theta[t])
+$$
+
+
+$$
+\mathbf{z}_t-\mathbf{z}_{t-1}=f(\mathbf{z}_{t-1},\theta,t)
+$$
+
+$$
+f(\mathbf{z}_{t-1},\theta,t)=\mathbf{z}_t-\mathbf{z}_{t-1}=\Delta \mathbf{z}_t
+$$
+
+$$
+\mathbf{z}_t-\mathbf{z}_{t-1}=f(\mathbf{z}_{t-1},\theta,t)
+$$
+
+
+$$
+\frac{d\mathbf{z}_t}{dt}=f(\mathbf{z}_{t},\theta,t)
+$$
+
+$$
+\mathbf{z}(t_1)=\mathbf{z}(t_0)+\int_{t_0}^{t_1} dt\  f(\mathbf{z}(t),\theta,t)
+$$
+
+$$
+\frac{\part L}{\part z_t}=\frac{\part L}{\part z_{t+1}}\frac{\part z_{t+1}}{\part z_t}
+$$
+
+$$
+\frac{\part L}{\part \theta_t}=\frac{\part L}{\part z_{t}}\frac{\part f(z_{t},\theta_t)}{\part \theta_t}
+$$
+
+$$
+Z=f_\theta(X)  \\ X'=g_\phi(Z)
+$$
+
+$$
+\frac{dx}{dt}=v(t)
+$$
+
+$$
+\begin{align}
+x(t)&=x_{t_0}+\int_{t_0}^t dt'\ v(t')\\
+&=x_{t_0}+\lim_{\Delta t\rightarrow 0} \Delta t\sum_{t'=t_0}^t \ v(t')
+\end{align}
+$$
+
+$$
+=x_{t_0}+\lim_{\Delta t\rightarrow 0} \Delta t\sum_{t'=t_0}^t \ v(t')
+$$
+
+$$
+\frac{dx}{dt}=v(t)\ \ \Leftrightarrow\ \ \frac{d\mathbf{z}_t}{dt}=f(\mathbf{z}_{t},\theta,t)
+$$
+
